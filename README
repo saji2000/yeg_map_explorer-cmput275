@@ -1,0 +1,27 @@
+
+Name: Seyed Sajjad Daneshmand  
+ID #:  1603769
+CMPUT  275  Winter 2020
+Exercise  1:  Joy Cursor
+
+Included Files:
+
+	Joy_cursor.cpp
+	README
+
+Accessories:
+
+	Arduino Mega2560
+	TFT Display
+	Joy Stick
+
+Wiring instruction:
+
+	port A8 and A9 should be connected to VRY and VRX respectively,
+	and GND to GND, +5V to +5V and port 53 on arduino to SW.
+
+Running instrucion:
+
+	Connect the TFT display on top of arduino such that +5V is connected to
+	+5V port and then connect the arduino to your laptop and use the command
+	Make upload to see the result
