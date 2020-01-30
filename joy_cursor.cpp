@@ -26,6 +26,7 @@
 #include "lcd_image.h"
 
 
+
 MCUFRIEND_kbv tft;
 
 #define DISPLAY_WIDTH  480
@@ -172,6 +173,8 @@ void processJoystick() {
   int yVal = analogRead(JOY_VERT);
   int buttonVal = digitalRead(JOY_SEL);
 
+  Serial.println(buttonVal);
+
   
   // Record the position before joy stick is pushed
   int pt_x = cursorX;
@@ -268,6 +271,7 @@ int main() {
 
   while (true) {
     processJoystick();
+
   }
 
 	Serial.end();
