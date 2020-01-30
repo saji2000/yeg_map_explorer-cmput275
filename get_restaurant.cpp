@@ -6,13 +6,14 @@
   Use it freely as a starting point for exercise 2.
 */
 #include <Arduino.h>
-#include "lcd_image.h"
+
 
 #include <Adafruit_GFX.h>
 #include <MCUFRIEND_kbv.h>
 #include <SD.h>
 #include <TouchScreen.h>
 #include <stdlib.h>
+#include "lcd_image.h"
 
 #define SD_CS 10
 #define RED 0xF800
@@ -44,17 +45,48 @@
 #define MINPRESSURE   10
 #define MAXPRESSURE 1000
 
+//  These  constants  are  for  the  2048 by 2048  map.
+#define  MAP_WIDTH  2048
+#define  MAP_HEIGHT  2048
+#define  LAT_NORTH  5361858l
+#define  LAT_SOUTH  5340953l
+#define  LON_WEST  -11368652l
+#define  LON_EAST  -11333496l
+//  These  functions  convert  between x/y map  position  and  lat/lon// (and  vice  versa.)
+
+int32_t  x_to_lon(int16_t x) {
+
+  return  map(x, 0, MAP_WIDTH , LON_WEST , LON_EAST);
+
+}
+
+int32_t  y_to_lat(int16_t y) {
+
+  return  map(y, 0, MAP_HEIGHT , LAT_NORTH , LAT_SOUTH);
+
+}
+
+int16_t  lon_to_x(int32_t  lon) {
+  return  map(lon , LON_WEST , LON_EAST , 0, MAP_WIDTH);
+}
+
+
+int16_t  lat_to_y(int32_t  lat) {
+  return  map(lat , LAT_NORTH , LAT_SOUTH , 0, MAP_HEIGHT);
+}
+
 MCUFRIEND_kbv tft;
 
 uint32_t num = 0;
-restaurant restBlock[8];
+
 uint32_t blockNum;
-restaurant rest;
+
 
 struct RestDist{
   uint16_t index;
   uint16_t dist;
 };
+
 
 RestDist rest_dist[NUM_RESTAURANTS];
 
@@ -76,24 +108,30 @@ struct restaurant {
   char name[55];
 };
 
+
+restaurant restBlock[8];
+restaurant rest;
+
+void getRestaurantFast(int restIndex, restaurant* restPtr);
+
 void display(){
 
-  tft.fillScreen (0);tft.setCursor(0, 0); //  where  the  characters  will be  
+  tft.fillScreen (0);tft.setCursor(0, 0); //  where  the  characters  will be  displayed
 
-  displayedtft.setTextWrap(false);
+  tft.setTextWrap(false);
 
-  selectedRest = 0; //  which  restaurant  is  selected?
+  int selectedRest = 0; //  which  restaurant  is  selected?
 
   for (int16_t i = 0; i < 21; i++) {
-    Restaurant r;
-    getRestaurantFast(RestDist[i].index , &r);
+    restaurant r;
+    getRestaurantFast(rest_dist[i].index , &r);
 
-    if (i !=  selectedRest) { // not  highlighted//  white  characters  on  black  
-      backgroundtft.setTextColor (0xFFFF , 0x0000);
+    if (i !=  selectedRest) { // not  highlighted//  white  characters  on  black  background
+      tft.setTextColor (0xFFFF , 0x0000);
     } 
 
-    else { //  highlighted//  black  characters  on  white  
-      backgroundtft.setTextColor (0x0000 , 0xFFFF);
+    else { //  highlighted//  black  characters  on  white background
+      tft.setTextColor (0x0000 , 0xFFFF);
     }
 
     tft.print(r.name);
@@ -128,6 +166,9 @@ void setup() {
   }
 
   // printinrestaurant restBlock[8];g the information on the tft display
+
+}
+
 void swap_ptr(RestDist *ptr1, RestDist *ptr2){
 
   RestDist *temp = ptr1;
@@ -139,9 +180,6 @@ void swap_ptr(RestDist *ptr1, RestDist *ptr2){
 }
 
 
-
-
-}
 void isort(RestDist *ptr, int len){
   int i = 1;
 
@@ -152,9 +190,9 @@ void isort(RestDist *ptr, int len){
     j = i;
     // implementing the sorting algorithm, to get the next struct we have to
     // go up by 4.
-    while((j > 0) && (*(ptr + 4*(j - 1)).dist > *(ptr + 4*j).dist)){
+    while((j > 0) && ((ptr + 4*(j - 1))->dist > (ptr + 4*j)->dist)){
 
-      swap_ptr(*(ptr + 4*(j - 1)).dist, *(ptr + 4*j).dist);
+      swap_ptr((ptr + 4*(j - 1))->dist, (ptr + 4*j)->dist);
 
       j--;
 
@@ -169,8 +207,8 @@ int findResaurant(int x, int y){
   for (int i = 0; i < NUM_RESTAURANTS; ++i) {
     getRestaurantFast(i, &rest);
     rest_dist[i].index = i;
-    int my_x = x - rest.lon;
-    int my_y = y - rest.lat;
+    int my_x = x_to_lon(x) - rest.lon;
+    int my_y = y_to_lat(y) - rest.lat;
     rest_dist[i].dist = abs(my_x) + abs(my_y);
     // not sure to cast them into doubles yet.
   }
