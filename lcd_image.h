@@ -11,6 +11,7 @@ typedef struct {
   uint16_t nrows;
 } lcd_image_t;
 
+
 /* Draws the referenced image to the LCD screen.
  *
  * img           : the image to draw
