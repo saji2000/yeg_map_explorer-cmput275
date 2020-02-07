@@ -2,10 +2,10 @@
  * Routine for drawing an image patch from the SD card to the LCD display.
  */
 
-#include "Adafruit_GFX.h"    // Core graphics library
-#include "MCUFRIEND_kbv.h" // Hardware-specific library
-#include <SPI.h>
-#include <SD.h>
+// #include "Adafruit_GFX.h"    // Core graphics library
+// #include "MCUFRIEND_kbv.h" // Hardware-specific library
+// #include <SPI.h>
+// #include <SD.h>
 
 #include "lcd_image.h"
 

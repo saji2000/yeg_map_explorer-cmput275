@@ -8,24 +8,26 @@
 #define JOY_HORIZ A8 // should connect A8 to pin VRy
 #define JOY_SEL   53
 
-#include <Arduino.h>
+// #include <Arduino.h>
 
-// core graphics library (written by Adafruit)
-#include <Adafruit_GFX.h>
+// // core graphics library (written by Adafruit)
+// #include <Adafruit_GFX.h>
 
-// Hardware-specific graphics library for MCU Friend 3.5" TFT LCD shield
-#include <MCUFRIEND_kbv.h>
+// // Hardware-specific graphics library for MCU Friend 3.5" TFT LCD shield
+// #include <MCUFRIEND_kbv.h>
 
-// LCD and SD card will communicate using the Serial Peripheral Interface (SPI)
-// e.g., SPI is used to display images stored on the SD card
-#include <SPI.h>
+// // LCD and SD card will communicate using the Serial Peripheral Interface (SPI)
+// // e.g., SPI is used to display images stored on the SD card
+// #include <SPI.h>
 
-// needed for reading/writing to SD card
-#include <SD.h>
+// // needed for reading/writing to SD card
+// #include <SD.h>
 
 #include "lcd_image.h"
 
 #include <TouchScreen.h>
+
+
 #define MAP_DISP_WIDTH (DISPLAY_WIDTH - 60)
 #define MAP_DISP_HEIGHT DISPLAY_HEIGHT
 
@@ -33,6 +35,12 @@
 #define NUM_RESTAURANTS 1066
 
 #define RED 0xF800
+#define BLUE 0x001F
+
+#define YP A3 // must be an analog pin, use "An" notation!
+#define XM A2 // must be an analog pin, use "An" notation!
+#define YM 9  // can be a digital pin
+#define XP 8  // can be a digital pin
 
 // calibration data for the touch screen, obtained from documentation
 // the minimum/maximum possible readings from the touch point
@@ -46,19 +54,7 @@
 #define MAXPRESSURE 1000
 
 //  These  constants  are  for  the  2048 by 2048  map.
-#define  MAP_WIDTH  2048
-#define  MAP_HEIGHT  2048
-#define  LAT_NORTH  5361858l
-#define  LAT_SOUTH  5340953l
-#define  LON_WEST  -11368652l
-#define  LON_EAST  -11333496l
 
-
-
-
-#define DISPLAY_WIDTH  480
-#define DISPLAY_HEIGHT 320
-#define YEG_SIZE 2048
 
 lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
 
@@ -72,31 +68,11 @@ MCUFRIEND_kbv tft;
 
 // the cursor position on the display
 int cursorX, cursorY;
-
 bool sentinel = false;
+int clicked;
+
 
 int map_center[2] = {YEG_SIZE/2 - (DISPLAY_WIDTH - 60)/2, YEG_SIZE/2 - DISPLAY_HEIGHT/2};
-
-int32_t  x_to_lon(int16_t x) {
-
-  return  map(x, 0, MAP_WIDTH , LON_WEST , LON_EAST);
-
-}
-
-int32_t  y_to_lat(int16_t y) {
-
-  return  map(y, 0, MAP_HEIGHT , LAT_NORTH , LAT_SOUTH);
-
-}
-
-int16_t  lon_to_x(int32_t  lon) {
-  return  map(lon , LON_WEST , LON_EAST , 0, MAP_WIDTH);
-}
-
-
-int16_t  lat_to_y(int32_t  lat) {
-  return  map(lat , LAT_NORTH , LAT_SOUTH , 0, MAP_HEIGHT);
-}
 
 uint32_t num = 0;
 
@@ -114,53 +90,13 @@ struct restaurant {
 restaurant restBlock[8];
 restaurant rest;
 
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
-struct RestDist{
-  uint16_t index;
-  uint16_t dist;
-};
-
-
-//TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
+TSPoint p = ts.getPoint();
 
 RestDist rest_dist[NUM_RESTAURANTS];
 
 RestDist *rest_d = rest_dist;
-
-
-void swap_ptr(RestDist *ptr1, RestDist *ptr2){
-
-  RestDist *temp = ptr1;
-
-  ptr1 = ptr2;
-
-  ptr2 = temp;
-
-}
-
-
-void isort(RestDist *ptr, int len){
-  int i = 1;
-
-  int j;
-
-  while(i < len){
-
-    j = i;
-    // implementing the sorting algorithm, to get the next struct we have to
-    // go up by 4.
-    while((j > 0) && ((ptr + 4*(j - 1))->dist > (ptr + 4*j)->dist)){
-
-      swap_ptr((ptr + 4*(j - 1))->dist, (ptr + 4*j)->dist);
-
-      j--;
-
-    }
-
-    i++;
-
-  }
-}
 
 
 void getRestaurantFast(int restIndex, restaurant* restPtr) {
@@ -177,6 +113,18 @@ void getRestaurantFast(int restIndex, restaurant* restPtr) {
   *restPtr = restBlock[restIndex % 8];
 }
 
+void pressed(){
+  // drawing the points on where restaurants are located at
+  for (int i = 0; i < NUM_RESTAURANTS; ++i){
+    getRestaurantFast(i, &rest);
+    int circle_x = lon_to_x(rest.lon);
+    int circle_y = lat_to_y(rest.lat);
+    tft.drawCircle(circle_x, circle_y, 3, BLUE);
+    tft.fillCircle(circle_x, circle_y, 3, BLUE);
+  }
+}
+
+
 int findResaurant(int x, int y){
   for (int i = 0; i < NUM_RESTAURANTS; ++i) {
     getRestaurantFast(i, &rest);
@@ -184,98 +132,31 @@ int findResaurant(int x, int y){
     int my_x = x_to_lon(x) - rest.lon;
     int my_y = y_to_lat(y) - rest.lat;
     rest_dist[i].dist = abs(my_x) + abs(my_y);
+    // Serial.println(rest_dist[i].dist);
     // not sure to cast them into doubles yet.
-    Serial.println("sup");
   }
 }
 
-int incrementX(int value){
-  int temp = value;
-  if (value > 2048 - 420){
-    value = 2048 - 210;
-  }
-  else{
-    value += 420;
-  }
-  if(temp == value){
-    sentinel = false;
-  }
-  else{
-    sentinel = true;
-  }
-  return value;
-}
-
-int decrementX(int value){
-  int temp = value;
-  if (value < 420){
-    value = 210;
-  }
-  else{
-    value -= 420;
-  }
-  if(temp == value){
-    sentinel = false;
-  }
-  else{
-    sentinel = true;
-  }
-  return value;
-}
-
-
-int incrementY(int value){
-  int temp = value;
-  if (value > 2048 - 320){
-    value = 2048 - 210;
-  }
-  else{
-    value += 320;
-  }
-  if(temp == value){
-    sentinel = false;
-  }
-  else{
-    sentinel = true;
-  }
-  return value;
-}
-
-
-int decrementY(int value){
-  int temp = value;
-  if (value < 320){
-    value = 210;
-  }
-  else{
-    value -= 320;
-  }
-  if(temp == value){
-    sentinel = false;
-  }
-  else{
-    sentinel = true;
-  }
-  return value;
-}
 
 
 // forward declaration for redrawing the cursor
 void redrawCursor(uint16_t colour);
 
-void display(){
+void display(int selectedRest){
 
   tft.fillScreen (0);tft.setCursor(0, 0); //  where  the  characters  will be  displayed
 
   tft.setTextWrap(false);
 
-  int selectedRest = 0; //  which  restaurant  is  selected?
+  tft.setTextSize(2);
 
+  // nt selectedRest = 0; //  which  restaurant  is  selected?
+  clicked += selectedRest;
   for (int16_t i = 0; i < 21; i++) {
     restaurant r;
     getRestaurantFast(rest_dist[i].index , &r);
 
-    if (i !=  selectedRest) { // not  highlighted//  white  characters  on  black  background
+    if (i !=  clicked) { // not  highlighted//  white  characters  on  black  background
       tft.setTextColor (0xFFFF , 0x0000);
     } 
 
@@ -308,6 +189,15 @@ void setup() {
   // must come before SD.begin() ...
   tft.begin(ID);                 // LCD gets ready to work
 
+  Serial.print("Initializing SPI communication for raw reads...");
+  if (!card.init(SPI_HALF_SPEED, SD_CS)) {
+    Serial.println("failed! Is the card inserted properly?");
+    while (true) {}
+  }
+  else {
+    Serial.println("OK!");
+  }
+
 	Serial.print("Initializing SD card...");
 	if (!SD.begin(SD_CS)) {
 		Serial.println("failed! Is it inserted properly?");
@@ -339,7 +229,7 @@ void redrawCursor(uint16_t colour) {
 void processJoystick() {
   int xVal = analogRead(JOY_HORIZ);
   int yVal = analogRead(JOY_VERT);
-
+  
   
   
   // Record the position before joy stick is pushed
@@ -347,14 +237,42 @@ void processJoystick() {
   int pt_y = cursorY;
   //while loop is used to prevent flickering which checks 4 cases.
   while (analogRead(JOY_HORIZ) - JOY_CENTER < JOY_DEADZONE && analogRead(JOY_VERT) - JOY_CENTER < JOY_DEADZONE &&
-  	JOY_CENTER - analogRead(JOY_HORIZ) < JOY_DEADZONE  && JOY_CENTER - analogRead(JOY_VERT)  < JOY_DEADZONE && digitalRead(JOY_SEL)){  	
+  	JOY_CENTER - analogRead(JOY_HORIZ) < JOY_DEADZONE  && JOY_CENTER - analogRead(JOY_VERT)  < JOY_DEADZONE && 
+    digitalRead(JOY_SEL) && p.z <= MINPRESSURE){  	
     delay(20);
+    
   }
 
-  if(digitalRead(JOY_SEL) == 0){
-    findResaurant(map_center[0] + cursorX, map_center[1] + cursorY);
-    isort(rest_d, NUM_RESTAURANTS);
-    display();
+  //p = ts.getPoint();
+
+  /*if (p.z > MINPRESSURE){
+    pressed();
+  }*/
+
+  int flag = digitalRead(JOY_SEL);
+  bool flag1 = true;
+
+  // Mode1 starts when the joystick button is pressed
+  while(!flag){
+    if(flag1){
+      findResaurant(map_center[0] + cursorX, map_center[1] + cursorY);
+      isort(rest_d, NUM_RESTAURANTS);
+      display(0);
+      flag1 = false;
+    }
+
+    if(analogRead(JOY_VERT) - JOY_CENTER < JOY_DEADZONE){
+      display(1);
+    }
+    else if(JOY_CENTER - analogRead(JOY_VERT)  < JOY_DEADZONE){
+      display(-1);
+    }
+    
+    if(digitalRead(JOY_SEL) == 0){
+      flag = true;
+      lcd_image_draw(&yegImage, &tft, map_center[0], map_center[1],
+      0, 0, DISPLAY_WIDTH - 60, DISPLAY_HEIGHT);
+    }
   }
   // now move the cursor
   // cursor's speed is relative to how much the joy stick is pushed
@@ -372,13 +290,13 @@ void processJoystick() {
   	cursorX -= (xVal - JOY_CENTER)/64;
   }
 
-  Serial.print("x: ");
+  // Serial.print("x: ");
 
-  Serial.println(cursorX);
+  // Serial.println(cursorX);
 
-  Serial.print("y: ");
+  // Serial.print("y: ");
 
-  Serial.println(cursorY);
+  // Serial.println(cursorY);
 
   // Getting the coordinates to draw another patch
   
@@ -399,11 +317,11 @@ void processJoystick() {
   }
 
   if(sentinel){
-  lcd_image_draw(&yegImage, &tft, map_center[0], map_center[1],
-  0, 0, DISPLAY_WIDTH - 60, DISPLAY_HEIGHT);
-  cursorX = 210;
-  cursorY = 160;
-  sentinel = false;
+    lcd_image_draw(&yegImage, &tft, map_center[0], map_center[1],
+    0, 0, DISPLAY_WIDTH - 60, DISPLAY_HEIGHT);
+    cursorX = 210;
+    cursorY = 160;
+    sentinel = false;
   }
 
   lcd_image_draw(&yegImage, &tft,

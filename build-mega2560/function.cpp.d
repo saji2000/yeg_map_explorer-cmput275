@@ -1,4 +1,4 @@
-build-mega2560/lcd_image.cpp.o: lcd_image.cpp lcd_image.h \
+build-mega2560/function.cpp.o: function.cpp lcd_image.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/Arduino.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/binary.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/WCharacter.h \

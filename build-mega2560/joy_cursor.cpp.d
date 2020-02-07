@@ -1,4 +1,4 @@
-build-mega2560/joy_cursor.cpp.o: joy_cursor.cpp \
+build-mega2560/joy_cursor.cpp.o: joy_cursor.cpp lcd_image.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/Arduino.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/binary.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/WCharacter.h \
@@ -20,5 +20,5 @@ build-mega2560/joy_cursor.cpp.o: joy_cursor.cpp \
  /home/cmput274/arduino-ua/libraries/SD/utility/Sd2PinMap.h \
  /home/cmput274/arduino-ua/libraries/SD/utility/SdInfo.h \
  /home/cmput274/arduino-ua/libraries/SD/utility/FatStructs.h \
- /home/cmput274/arduino-ua/libraries/SD/utility/SdFatUtil.h lcd_image.h \
+ /home/cmput274/arduino-ua/libraries/SD/utility/SdFatUtil.h \
  /home/cmput274/arduino-ua/libraries/TouchScreen/TouchScreen.h
