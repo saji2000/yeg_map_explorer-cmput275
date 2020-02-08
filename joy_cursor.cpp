@@ -1,27 +1,8 @@
-/*
-	Demonstrating cursor movement over the map of Edmonton. You will improve over
-  what we do in the next weekly exercise.
-*/
 
 #define SD_CS 10
 #define JOY_VERT  A9 // should connect A9 to pin VRx
 #define JOY_HORIZ A8 // should connect A8 to pin VRy
 #define JOY_SEL   53
-
-// #include <Arduino.h>
-
-// // core graphics library (written by Adafruit)
-// #include <Adafruit_GFX.h>
-
-// // Hardware-specific graphics library for MCU Friend 3.5" TFT LCD shield
-// #include <MCUFRIEND_kbv.h>
-
-// // LCD and SD card will communicate using the Serial Peripheral Interface (SPI)
-// // e.g., SPI is used to display images stored on the SD card
-// #include <SPI.h>
-
-// // needed for reading/writing to SD card
-// #include <SD.h>
 
 #include "lcd_image.h"
 
@@ -93,7 +74,7 @@ restaurant rest;
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
 TSPoint p = ts.getPoint();
-
+ 
 RestDist rest_dist[NUM_RESTAURANTS];
 
 RestDist *rest_d = rest_dist;
@@ -117,10 +98,14 @@ void pressed(){
   // drawing the points on where restaurants are located at
   for (int i = 0; i < NUM_RESTAURANTS; ++i){
     getRestaurantFast(i, &rest);
-    int circle_x = lon_to_x(rest.lon);
-    int circle_y = lat_to_y(rest.lat);
-    tft.drawCircle(circle_x, circle_y, 3, BLUE);
-    tft.fillCircle(circle_x, circle_y, 3, BLUE);
+    int circle_x = lon_to_x(rest.lon) - map_center[0];
+    int circle_y = lat_to_y(rest.lat) - map_center[1];
+    // Serial.println(circle_x);
+    // Serial.println(circle_y);
+    if(circle_x < 417){
+      tft.drawCircle(circle_x, circle_y, 3, BLUE);
+      tft.fillCircle(circle_x, circle_y, 3, BLUE);
+    }
   }
 }
 
@@ -144,29 +129,42 @@ void redrawCursor(uint16_t colour);
 
 void display(int selectedRest){
 
-  tft.fillScreen (0);tft.setCursor(0, 0); //  where  the  characters  will be  displayed
 
-  tft.setTextWrap(false);
-
-  tft.setTextSize(2);
 
   // nt selectedRest = 0; //  which  restaurant  is  selected?
   clicked += selectedRest;
-  for (int16_t i = 0; i < 21; i++) {
-    restaurant r;
-    getRestaurantFast(rest_dist[i].index , &r);
+  if(selectedRest == 0){
+    tft.fillScreen (0);tft.setCursor(0, 0); //  where  the  characters  will be  displayed
 
-    if (i !=  clicked) { // not  highlighted//  white  characters  on  black  background
-      tft.setTextColor (0xFFFF , 0x0000);
-    } 
+    tft.setTextWrap(false);
 
-    else { //  highlighted//  black  characters  on  white background
-      tft.setTextColor (0x0000 , 0xFFFF);
+    tft.setTextSize(2);
+    for (int16_t i = 0; i < 21; i++) {
+
+      restaurant r;
+      getRestaurantFast(rest_dist[i].index , &r);
+
+      if (i !=  0) { // not  highlighted//  white  characters  on  black  background
+        tft.setTextColor (0xFFFF , 0x0000);
+      } 
+
+      else { //  highlighted//  black  characters  on  white background
+        tft.setTextColor (0x0000 , 0xFFFF);
+      }
+
+      tft.print(r.name);
+
+      tft.print("\n");
     }
+  }
 
-    tft.print(r.name);
-
-    tft.print("\n");
+  if(selectedRest != 0){
+    tft.setCursor(0, 0);
+    tft.setTextColor (0x0000 , 0xFFFF);
+    tft.setCursor(0, 16);
+    
+    tft.setTextColor (0xFFFF , 0x0000);
+    Serial.println("sup");
   }
 
   tft.print("\n");
@@ -235,19 +233,27 @@ void processJoystick() {
   // Record the position before joy stick is pushed
   int pt_x = cursorX;
   int pt_y = cursorY;
+
   //while loop is used to prevent flickering which checks 4 cases.
   while (analogRead(JOY_HORIZ) - JOY_CENTER < JOY_DEADZONE && analogRead(JOY_VERT) - JOY_CENTER < JOY_DEADZONE &&
   	JOY_CENTER - analogRead(JOY_HORIZ) < JOY_DEADZONE  && JOY_CENTER - analogRead(JOY_VERT)  < JOY_DEADZONE && 
     digitalRead(JOY_SEL) && p.z <= MINPRESSURE){  	
     delay(20);
-    
+    p = ts.getPoint();
+
+    pinMode(YP, OUTPUT); 
+    pinMode(XM, OUTPUT);
+
   }
 
-  //p = ts.getPoint();
+  p = ts.getPoint();
 
-  /*if (p.z > MINPRESSURE){
+  pinMode(YP, OUTPUT); 
+  pinMode(XM, OUTPUT);
+
+  if (p.z > MINPRESSURE){
     pressed();
-  }*/
+  }
 
   int flag = digitalRead(JOY_SEL);
   bool flag1 = true;
@@ -261,10 +267,12 @@ void processJoystick() {
       flag1 = false;
     }
 
-    if(analogRead(JOY_VERT) - JOY_CENTER < JOY_DEADZONE){
+    if(analogRead(JOY_VERT) - JOY_CENTER > JOY_DEADZONE){
       display(1);
+      // Serial.println(analogRead(JOY_VERT));
+      // Serial.println(JOY_CENTER);
     }
-    else if(JOY_CENTER - analogRead(JOY_VERT)  < JOY_DEADZONE){
+    else if(JOY_CENTER - analogRead(JOY_VERT) > JOY_DEADZONE){
       display(-1);
     }
     
