@@ -111,14 +111,13 @@ void pressed(){
 
 
 int findResaurant(int x, int y){
+  // finds the 21st closest restaurants to the point
   for (int i = 0; i < NUM_RESTAURANTS; ++i) {
     getRestaurantFast(i, &rest);
     rest_dist[i].index = i;
     int my_x = x_to_lon(x) - rest.lon;
     int my_y = y_to_lat(y) - rest.lat;
     rest_dist[i].dist = abs(my_x) + abs(my_y);
-    // Serial.println(rest_dist[i].dist);
-    // not sure to cast them into doubles yet.
   }
 }
 
@@ -129,10 +128,10 @@ void redrawCursor(uint16_t colour);
 
 void display(int selectedRest){
 
-
-
   // nt selectedRest = 0; //  which  restaurant  is  selected?
   clicked += selectedRest;
+
+  clicked = constrain(clicked, 0, 19);
   if(selectedRest == 0){
     tft.fillScreen (0);tft.setCursor(0, 0); //  where  the  characters  will be  displayed
 
@@ -155,16 +154,44 @@ void display(int selectedRest){
       tft.print(r.name);
 
       tft.print("\n");
+      
     }
   }
+  int my_num;
+  if(selectedRest > 0){
+        restaurant s;
+        getRestaurantFast(rest_dist[clicked - 1].index , &s);
+        my_num = 16 * (clicked - 1);
+        tft.setCursor(0, my_num);
+        tft.print(s.name);
+        //tft.print("\n");
+        Serial.println(clicked);
+        
+        tft.setTextColor (0x0000 , 0xFFFF);
 
-  if(selectedRest != 0){
-    tft.setCursor(0, 0);
-    tft.setTextColor (0x0000 , 0xFFFF);
-    tft.setCursor(0, 16);
-    
-    tft.setTextColor (0xFFFF , 0x0000);
-    Serial.println("sup");
+        getRestaurantFast(rest_dist[clicked].index , &s);
+        tft.setCursor(0, 16 * clicked);
+        tft.print(s.name);
+        tft.setTextColor (0xFFFF , 0x0000);        
+
+  }
+  else if(selectedRest < 0){
+
+        restaurant s;
+        getRestaurantFast(rest_dist[clicked + 1].index , &s);
+        my_num = 16 * (clicked + 1); 
+        tft.setCursor(0, my_num);
+        tft.print(s.name);
+        tft.setTextColor (0x0000 , 0xFFFF);
+
+
+        getRestaurantFast(rest_dist[clicked].index , &s);
+        my_num = 16 * (clicked);
+        tft.setCursor(0, my_num);
+        tft.print(s.name);
+        //tft.print("\n");
+        Serial.println(clicked);
+        tft.setTextColor (0xFFFF , 0x0000);
   }
 
   tft.print("\n");
@@ -278,10 +305,30 @@ void processJoystick() {
     
     if(digitalRead(JOY_SEL) == 0){
       flag = true;
+      restaurant rest;
+      getRestaurantFast(rest_dist[clicked].index, &rest);
+      map_center[0] = lon_to_x(rest.lon) - (DISPLAY_WIDTH - 60)/2;
+      map_center[1] = lat_to_y(rest.lat) - DISPLAY_HEIGHT/2;
+
+      map_center[0] = constrain(map_center[0], 0, MAP_WIDTH - MAP_DISP_WIDTH);
+
+      map_center[1] = constrain(map_center[1], 0, MAP_HEIGHT - MAP_DISP_HEIGHT);
+
       lcd_image_draw(&yegImage, &tft, map_center[0], map_center[1],
       0, 0, DISPLAY_WIDTH - 60, DISPLAY_HEIGHT);
+
+      cursorX = lon_to_x(rest.lon) - map_center[0];
+      cursorY = lat_to_y(rest.lat) - map_center[1];
+
+      tft.drawRect(MAP_DISP_WIDTH, 0, 60, MAP_DISP_HEIGHT, TFT_BLACK);
+      tft.fillRect(MAP_DISP_WIDTH, 0, 60, MAP_DISP_HEIGHT, TFT_BLACK);
+
+      // cursorX = MAP_DISP_WIDTH/2;
+      // cursorY = MAP_DISP_HEIGHT/2;
+      }
     }
-  }
+  
+  clicked = 0;
   // now move the cursor
   // cursor's speed is relative to how much the joy stick is pushed
 
@@ -297,14 +344,6 @@ void processJoystick() {
   else if (xVal > JOY_CENTER + JOY_DEADZONE){
   	cursorX -= (xVal - JOY_CENTER)/64;
   }
-
-  // Serial.print("x: ");
-
-  // Serial.println(cursorX);
-
-  // Serial.print("y: ");
-
-  // Serial.println(cursorY);
 
   // Getting the coordinates to draw another patch
   
