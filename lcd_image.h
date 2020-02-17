@@ -55,7 +55,7 @@ struct RestDist{
   uint16_t dist;
 };
 
-
+// calling the functions in function.cpp so that they could be used in a1part1.cpp
 
 int32_t  x_to_lon(int16_t x);
 int32_t  y_to_lat(int16_t y);
@@ -67,6 +67,8 @@ int decrementX(int value);
 int decrementY(int value);
 void swap_ptr(RestDist *ptr1, RestDist *ptr2);
 void isort(RestDist *ptr, int len);
+void qsort(RestDist *ptr, int low, int high);
+int partition(RestDist *ptr, int low, int high);
 /* Draws the referenced image to the LCD screen.
  *
  * img           : the image to draw

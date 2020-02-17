@@ -1,12 +1,15 @@
 
-Name: Seyed Sajjad Daneshmand  
-ID #:  1603769
+Names: Seyed Sajjad Daneshmand, Sharuhen Pa
+ID #:  1603769, 1598693
 CMPUT  275  Winter 2020
-Exercise  1:  Joy Cursor
+Assignment 1 part 1:  
 
 Included Files:
 
-	Joy_cursor.cpp
+	a1part1.cpp
+	function.cpp
+	lcd_image.h
+	lcd_image.cpp
 	README
 
 Accessories:
@@ -22,6 +25,12 @@ Wiring instruction:
 
 Running instrucion:
 
-	Connect the TFT display on top of arduino such that +5V is connected to
-	+5V port and then connect the arduino to your laptop and use the command
-	Make upload to see the result
+	Use make upload in terminal and test the program on the arduino 
+	and tft display with the joy cursor
+
+Notes:
+
+	function.cpp includes some of the utilized functions in a1part1.cpp
+	to organized the code better. Also I have modified the header file
+	because I wanted to use different functions and variables in different
+	files. Also Joy cursor re draws itself after patch redraw
