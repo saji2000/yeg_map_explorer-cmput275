@@ -107,7 +107,7 @@ int decrementY(int value){
 void swap_ptr(RestDist *ptr1, RestDist *ptr2){
 	// implemented function for isort
 
-  RestDist temp = *ptr1;
+  auto temp = *ptr1;
 
   *ptr1 = *ptr2;
 
@@ -141,34 +141,66 @@ void isort(RestDist *ptr, int len){
   
 }
 
-int partition(RestDist *ptr, int low, int high){
+// void qsort(RestDist a[], uint16_t len){
+//   if (len <= 1) return;
+
+//   uint16_t p = (len + 1)/2;
+
+//   swap_ptr(&a[p], &a[len - 1]);
+
+//   uint16_t low = 0;
+//   uint16_t high = len - 2;
+
+//   while(high >= low){
+//     if(a[high].dist <= a[len-1].dist){
+//       high--;
+//     }
+//     else if(a[low].dist <= a[len-1].dist){
+//       low--;
+//     }
+//     else{
+//       swap_ptr(&a[low], &a[high]);
+//     }
+//   }
+
+//   swap_ptr(&a[low], &a[len-1]);
+
+//   qsort(a, low);
+//   qsort(a + low, len - low);
+// }
+
+
+
+int partition(RestDist *ptr, int len, int pivot){
   // This is partition function which does the sorting for q sort
-  int pivot = (ptr + (low + high)/2)->dist;
+  swap_ptr(ptr + pivot, ptr + len - 1);
   // pivot is chosen to be the last element, can be anything
-  int i = 0;
+  //Serial.println(pivot);
+  int low = 0;
+  int high = len - 2;
   while(high >= low){
-    if((ptr + low)->dist <= pivot){
+    if((ptr + low)->dist <= (ptr + len - 1)->dist){
       low++;
     }
-    else if((ptr + high)->dist > pivot){
+    else if((ptr + high)->dist > (ptr + len - 1)->dist){
       high--;
     }
     else{
       swap_ptr(ptr + low, ptr + high);
-    }
-    i++;
-    Serial.println(i);
-
+      low++;
+    }    
   }
+  
+  swap_ptr(ptr + low, ptr + len - 1);
   return low;
 }
 
-void qsort(RestDist *ptr, int low, int high){
-  if(low < high){
-    Serial.println("error q");
-    int p = partition(ptr, low, high);
+void qsort(RestDist *ptr, int len){
+  if(len <= 1) return;
 
-    qsort(ptr, low, p - 1);
-    qsort(ptr, p + 1, high);
-  }
+    int p = partition(ptr, len, len/2);
+
+    qsort(ptr, p);
+    qsort(ptr + p + 1, len - p - 1);
+  
 }

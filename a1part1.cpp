@@ -51,6 +51,9 @@ MCUFRIEND_kbv tft;
 int cursorX, cursorY;
 bool sentinel = false;
 int clicked;
+int star = 5;
+int sort = 1;
+int j = 0;
 
 // map_corner holds the top left corner value of the map
 int map_center[2] = {YEG_SIZE/2 - (DISPLAY_WIDTH - 60)/2, YEG_SIZE/2 - DISPLAY_HEIGHT/2};
@@ -79,6 +82,11 @@ RestDist rest_dist[NUM_RESTAURANTS];
 
 RestDist *rest_d = rest_dist;
 
+int rate(restaurant r){
+  int rating = floor(double(r.rating + 1)/2);
+  rating = constrain(rating, 1, 5);
+  return rating;
+}
 
 void getRestaurantFast(int restIndex, restaurant* restPtr) {
   // todo
@@ -100,8 +108,8 @@ void pressed(){
     getRestaurantFast(i, &rest);
     int circle_x = lon_to_x(rest.lon) - map_center[0];
     int circle_y = lat_to_y(rest.lat) - map_center[1];
-
-    if(circle_x < 417){
+    int r = rate(rest);
+    if(circle_x < 417 && (r >= star)){
       tft.drawCircle(circle_x, circle_y, 3, BLUE);
       tft.fillCircle(circle_x, circle_y, 3, BLUE);
     }
@@ -109,14 +117,25 @@ void pressed(){
 }
 
 
-int findResaurant(int x, int y){
+void findResaurant(int x, int y){
   // finds the 21st closest restaurants to the point
+  j = 0;
+  int temp;
   for (int i = 0; i < NUM_RESTAURANTS; ++i) {
     getRestaurantFast(i, &rest);
-    rest_dist[i].index = i;
-    int my_x = x_to_lon(x) - rest.lon;
-    int my_y = y_to_lat(y) - rest.lat;
-    rest_dist[i].dist = abs(my_x) + abs(my_y);
+    temp = rate(rest);
+    // Serial.print("restaurant");
+    // Serial.println(r);
+    // Serial.print("star:");
+    // Serial.println(star);
+    Serial.println(i);
+    if (temp >= star){
+      rest_dist[j].index = i;
+      int my_x = x_to_lon(x) - rest.lon;
+      int my_y = y_to_lat(y) - rest.lat;
+      rest_dist[j].dist = abs(my_x) + abs(my_y);
+      j++;
+    }
   }
 }
 
@@ -142,11 +161,6 @@ void display(int selectedRest){
       restaurant r;
       getRestaurantFast(rest_dist[i].index , &r);
 
-
-      // you have to add the condition for stars here
-
-
-
       if (i !=  0) { // not  highlighted//  white  characters  on  black  background
         tft.setTextColor (0xFFFF , 0x0000);
       } 
@@ -170,7 +184,7 @@ void display(int selectedRest){
         tft.setCursor(0, my_num);
         tft.print(s.name);
         //tft.print("\n");
-        Serial.println(clicked);
+        //Serial.println(clicked);
         
         tft.setTextColor (0x0000 , 0xFFFF);
 
@@ -300,8 +314,8 @@ void processJoystick() {
     if(flag1){
       // Entering Mode1
       findResaurant(map_center[0] + cursorX, map_center[1] + cursorY);
-      isort(rest_d, NUM_RESTAURANTS);
-      //qsort(rest_d, 0, NUM_RESTAURANTS);
+      //isort(rest_d, NUM_RESTAURANTS);
+      qsort(rest_d, j);
       display(0);
       flag1 = false;
     }
@@ -336,7 +350,7 @@ void processJoystick() {
 
       tft.drawRect(MAP_DISP_WIDTH, 0, 60, MAP_DISP_HEIGHT, TFT_BLACK);
       tft.fillRect(MAP_DISP_WIDTH, 0, 60, MAP_DISP_HEIGHT, TFT_BLACK);
-
+      Serial.println("it's here");
       // cursorX = MAP_DISP_WIDTH/2;
       // cursorY = MAP_DISP_HEIGHT/2;
       }
@@ -418,10 +432,9 @@ void processJoystick() {
 
 int main() {
 	setup();
-
-  while (true) {
+  Serial.println("wtf");
+  while(true){
     processJoystick();
-
   }
 
 	Serial.end();

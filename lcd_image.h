@@ -66,9 +66,10 @@ int incrementY(int value);
 int decrementX(int value);
 int decrementY(int value);
 void swap_ptr(RestDist *ptr1, RestDist *ptr2);
+int partition(RestDist *ptr, int len, int pivot);
 void isort(RestDist *ptr, int len);
-void qsort(RestDist *ptr, int low, int high);
-int partition(RestDist *ptr, int low, int high);
+void qsort(RestDist *ptr, int len);
+//int partition(RestDist *ptr, int len, int pivot);
 /* Draws the referenced image to the LCD screen.
  *
  * img           : the image to draw
